@@ -1,0 +1,17 @@
+{
+  "name": "apt_search",
+  "version": "1.0.0",
+  "description": "LH청약플러스 / SH인터넷청약시스템 신규 입주자모집공고 감시 및 알림",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node src/check.js",
+    "check:dry": "node src/check.js --dry-run",
+    "check:seed": "node src/check.js --seed",
+    "check:test-notify": "node src/check.js --test-notify"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

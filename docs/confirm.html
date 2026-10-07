@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>청약 공고 이동 확인</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card-bg: #ffffff;
+    --text: #1a1d23;
+    --text-sub: #5b616e;
+    --border: #e2e4e9;
+    --accent: #2563eb;
+    --accent-text: #ffffff;
+    --danger: #dc2626;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171c;
+      --card-bg: #1e2127;
+      --text: #e8eaed;
+      --text-sub: #9aa0ab;
+      --border: #2d3139;
+      --accent: #3b82f6;
+      --accent-text: #0b0d10;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171c;
+    --card-bg: #1e2127;
+    --text: #e8eaed;
+    --text-sub: #9aa0ab;
+    --border: #2d3139;
+    --accent: #3b82f6;
+    --accent-text: #0b0d10;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-text);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-size: 17px;
+    line-height: 1.5;
+    margin: 0 0 8px;
+    word-break: keep-all;
+  }
+  .meta {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin: 0 0 22px;
+  }
+  .question {
+    font-size: 15px;
+    margin: 0 0 20px;
+  }
+  .btns {
+    display: flex;
+    gap: 10px;
+  }
+  button {
+    flex: 1;
+    appearance: none;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 12px 0;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  button.primary {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+  }
+  .error {
+    color: var(--danger);
+    font-size: 14px;
+  }
+  .status {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-top: 14px;
+    min-height: 18px;
+  }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div id="normalView" hidden>
+      <span class="badge" id="sourceBadge"></span>
+      <h1 id="titleText"></h1>
+      <p class="meta" id="metaText"></p>
+      <p class="question">이 공고로 이동하시겠습니까?</p>
+      <div class="btns">
+        <button id="cancelBtn" type="button">취소</button>
+        <button id="goBtn" class="primary" type="button">이동</button>
+      </div>
+      <p class="status" id="statusText"></p>
+    </div>
+    <div id="errorView" hidden>
+      <p class="error">요청을 처리할 수 없습니다. 알림을 다시 눌러주세요.</p>
+    </div>
+  </div>
+
+  <form id="shForm" method="POST" style="display:none" target="_blank">
+    <input type="hidden" name="page" value="1">
+    <input type="hidden" name="seq" id="shSeq">
+    <input type="hidden" name="multi_itm_seq" id="shMultiItmSeq">
+  </form>
+
+  <script>
+  (function () {
+    'use strict'
+
+    // 목적지는 여기서 화이트리스트로만 조립한다 (쿼리로 임의 URL을 받지 않음 = open redirect 방지)
+    var DESTINATIONS = {
+      LH: {
+        label: 'LH청약플러스',
+        listUrl: 'https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1027'
+      },
+      SH: {
+        sale: {
+          label: 'SH인터넷청약시스템 · 분양',
+          viewUrl: 'https://www.i-sh.co.kr/app/lay2/program/S48T1581C1617/www/brd/m_244/view.do',
+          multiItmSeq: '0'
+        },
+        rent: {
+          label: 'SH인터넷청약시스템 · 임대',
+          viewUrl: 'https://www.i-sh.co.kr/app/lay2/program/S48T1581C563/www/brd/m_247/view.do',
+          multiItmSeq: '2'
+        }
+      }
+    }
+
+    function qs(name) {
+      return new URLSearchParams(window.location.search).get(name)
+    }
+
+    function show(el) { el.hidden = false }
+    function hide(el) { el.hidden = true }
+
+    var src = qs('src')
+    var title = qs('t') || '(제목 없음)'
+    var postedAt = qs('d') || ''
+
+    var normalView = document.getElementById('normalView')
+    var errorView = document.getElementById('errorView')
+    var sourceBadge = document.getElementById('sourceBadge')
+    var titleText = document.getElementById('titleText')
+    var metaText = document.getElementById('metaText')
+    var statusText = document.getElementById('statusText')
+    var goBtn = document.getElementById('goBtn')
+    var cancelBtn = document.getElementById('cancelBtn')
+
+    var action = null // 승인 시 실행할 함수
+
+    if (src === 'LH') {
+      var lh = DESTINATIONS.LH
+      sourceBadge.textContent = lh.label
+      action = function () {
+        statusText.textContent = 'LH청약플러스 목록으로 이동합니다…'
+        window.location.href = lh.listUrl
+      }
+    } else if (src === 'SH') {
+      var board = qs('b')
+      var seq = qs('seq')
+      var sh = DESTINATIONS.SH[board]
+      if (sh && seq) {
+        sourceBadge.textContent = sh.label
+        action = function () {
+          statusText.textContent = '공고 상세 페이지를 여는 중입니다…'
+          var form = document.getElementById('shForm')
+          form.action = sh.viewUrl
+          document.getElementById('shSeq').value = seq
+          document.getElementById('shMultiItmSeq').value = sh.multiItmSeq
+          form.submit()
+        }
+      }
+    }
+
+    if (!action) {
+      show(errorView)
+      hide(normalView)
+      return
+    }
+
+    titleText.textContent = title
+    metaText.textContent = postedAt ? ('게시일 ' + postedAt) : ''
+    show(normalView)
+
+    goBtn.addEventListener('click', function () {
+      goBtn.disabled = true
+      cancelBtn.disabled = true
+      action()
+    })
+
+    cancelBtn.addEventListener('click', function () {
+      statusText.textContent = '취소되었습니다. 이 창을 닫아도 됩니다.'
+      goBtn.disabled = true
+      cancelBtn.disabled = true
+    })
+  })()
+  </script>
+</body>
+</html>
