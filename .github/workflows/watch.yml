@@ -31,13 +31,16 @@ jobs:
           CONFIRM_PAGE_BASE_URL: ${{ secrets.CONFIRM_PAGE_BASE_URL }}
         run: node src/check.js --channel=telegram
 
-      - name: 상태 변경 커밋
+      - name: 상태/하트비트 커밋
         run: |
           git config user.name 'apt-search-bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add state/seen.json
+          # 신규 공고가 없는 날이 이어져도 저장소에 매번 활동을 남겨
+          # GitHub의 '60일 무활동 시 스케줄 Actions 자동 비활성화' 정책에 걸리지 않게 한다.
+          date -u +'%Y-%m-%dT%H:%M:%SZ' > state/last-run.txt
+          git add state/seen.json state/last-run.txt
           if ! git diff --cached --quiet; then
-            git commit -m '상태 갱신: 확인한 공고 기록'
+            git commit -m '상태 갱신: 확인 결과 기록'
             git push
           else
             echo '변경된 상태 없음'

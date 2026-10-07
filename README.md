@@ -158,4 +158,5 @@ node src/check.js --state=.local/seen.json --channel=toast   # register-task.ps1
 - **LH 알림은 상세가 아니라 목록 페이지로 이동한다.** `selectWrtancInfo.do`가 NetFunnel 대기열 토큰을 요구해 외부에서 GET/POST 모두 "오류알림"이 뜨는 것을 확인했다. 알림에 제목이 들어 있으니 목록에서 바로 찾을 수 있다.
 - 사이트 HTML 구조가 바뀌면 파서가 조용히 0건을 반환할 수 있다. `check.js`는 소스별로 파싱 결과가 0건이면 경고를 출력한다 — Actions 로그에 이 경고가 보이면 `src/parse-lh.js` / `src/parse-sh.js`를 실제 HTML에 맞춰 손봐야 한다.
 - GitHub Actions의 `schedule` cron은 플랫폼 혼잡 시 지연될 수 있어 실제 간격이 30분보다 벌어질 수 있다.
+- GitHub는 저장소에 60일간 커밋이 없으면 스케줄된 Actions를 자동으로 비활성화한다. 매 실행마다 `state/last-run.txt`에 타임스탬프를 남겨 항상 커밋이 발생하게 해 이 문제를 막아뒀다(신규 공고 여부와 무관).
 - SH 분양/임대 게시판에 같은 글이 교차 게시되는 경우가 있어, seq 기준으로 한 번만 알린다(어느 게시판에서 먼저 잡히든 상관없다).
