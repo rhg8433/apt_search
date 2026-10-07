@@ -38,7 +38,7 @@ export const sources = [
 export const excludeKeywords = []
 
 export const confirmPageBaseUrl = process.env.CONFIRM_PAGE_BASE_URL
-  || 'https://REPLACE_WITH_GITHUB_USERNAME.github.io/apt_search/confirm.html'
+  || 'https://rhg8433.github.io/apt_search/confirm.html'
 
 export const telegram = {
   botToken: process.env.TELEGRAM_BOT_TOKEN || '',
