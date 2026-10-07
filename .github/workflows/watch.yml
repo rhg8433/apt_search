@@ -22,7 +22,7 @@ jobs:
       - name: Node 설정
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: 공고 확인 및 텔레그램 알림
         env:
